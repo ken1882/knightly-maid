@@ -1,0 +1,52 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
+}
+
+dependencies {
+    // Dragon Survival and Touhou Little Maid jars, copied from the modpack (see README)
+    compileOnly fileTree(dir: 'libs', include: '*.jar')
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = "${project.archives_base_name}-neoforge-mc${project.minecraft_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+
+    mods {
+        "${project.mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+processResources {
+    def props = [
+            'version'                         : project.version,
+            'neo_version'                     : project.neo_version,
+            'dragonsurvival_version_range'    : project.dragonsurvival_version_range,
+            'touhou_little_maid_version_range': project.touhou_little_maid_version_range
+    ]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand props
+    }
+}
+
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}

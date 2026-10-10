@@ -1,0 +1,27 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# third-party jars (copied from the modpack, see README)
+
+libs/
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+run*/
