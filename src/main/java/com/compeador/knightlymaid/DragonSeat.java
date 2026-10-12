@@ -11,6 +11,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -163,6 +164,23 @@ public class DragonSeat extends Entity {
     @Override
     public Vec3 getDismountLocationForPassenger(final LivingEntity passenger) {
         return getVehicle() != null ? getVehicle().getDismountLocationForPassenger(passenger) : super.getDismountLocationForPassenger(passenger);
+    }
+
+    /**
+     * YSM models are made for players, which sit {@link Player#DEFAULT_VEHICLE_ATTACHMENT} lower than other passengers (a maid has no
+     * vehicle attachment). TLM hands YSM the whole rendering of a maid, and on a vehicle it does not know (like this seat) YSM plays the
+     * player 'sit' animation without lowering her, so she would float above the seat by that much. <br>
+     * Not in TLM's sitting pose (waiting): YSM's maid renderer already lowers her then, and skips its vehicle offsets.
+     */
+    @Override
+    protected Vec3 getPassengerAttachmentPoint(final Entity passenger, final EntityDimensions dimensions, float scale) {
+        Vec3 point = super.getPassengerAttachmentPoint(passenger, dimensions, scale);
+
+        if (passenger instanceof EntityMaid maid && maid.isYsmModel() && !maid.isMaidInSittingPose()) {
+            return point.subtract(Player.DEFAULT_VEHICLE_ATTACHMENT.scale(maid.getScale()));
+        }
+
+        return point;
     }
 
     /** Places the seat on the dragon's mounting bone (where DS seats player riders) */

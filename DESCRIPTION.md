@@ -32,7 +32,6 @@ An add-on for **Touhou Little Maid** that puts your maid in the saddle.
 
 | Mod | |
 |---|---|
-| NeoForge 1.21.1 | Required |
 | Touhou Little Maid | Required |
 | Dragon Survival | Optional: dragon riding |
 | Touhou Little Maid Spell, TACZ | Optional: spells and guns kite on horseback |
