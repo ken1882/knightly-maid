@@ -18,6 +18,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityMountEvent;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import org.jetbrains.annotations.Nullable;
@@ -91,11 +92,17 @@ public class HorseEvents {
             // Same as TLM's 'DismountMaidEvent'
             event.setCanceled(true);
 
-            if (player instanceof ServerPlayer serverPlayer && !MountMaidEvents.runAsOwner(() -> {
-                maid.stopRiding();
-                return !maid.isPassenger();
-            })) {
-                fail(serverPlayer, maid);
+            if (player instanceof ServerPlayer serverPlayer) {
+                Entity vehicle = maid.getVehicle();
+
+                if (MountMaidEvents.runAsOwner(() -> {
+                    maid.stopRiding();
+                    return !maid.isPassenger();
+                })) {
+                    KnightlyMaidConfig.verbose(LOGGER, "{} let maid {} off {}", player.getScoreboardName(), maid.getUUID(), vehicle);
+                } else {
+                    fail(serverPlayer, maid);
+                }
             }
         }
     }
@@ -115,6 +122,22 @@ public class HorseEvents {
 
         if (!isAllowed) {
             event.setCanceled(true);
+            KnightlyMaidConfig.verbose(LOGGER, "Kept maid {} on {}: blocked {}", maid.getUUID(), maid.getVehicle(),
+                    event.isDismounting() ? "dismount" : "mounting " + event.getEntityBeingMounted());
+        }
+    }
+
+    /**
+     * A mount going through a portal takes its passengers along ('Entity#changeDimension'), but TLM's 'EntityMaid#changeDimension' only
+     * teleports her near her own spot, so the horse would arrive alone. While she drives it, it stays with her.
+     */
+    @SubscribeEvent
+    public static void keepMountWithMaid(final EntityTravelToDimensionEvent event) {
+        Entity mount = event.getEntity();
+
+        if (mount.getControllingPassenger() instanceof EntityMaid maid && MaidMounts.isMaidMount(mount)) {
+            event.setCanceled(true);
+            KnightlyMaidConfig.verbose(LOGGER, "Kept {} of maid {} from travelling to {}", mount, maid.getUUID(), event.getDimension().location());
         }
     }
 
@@ -127,6 +150,7 @@ public class HorseEvents {
         if (event.getEntity() instanceof AbstractHorse horse && horse.isStanding() && !horse.level().isClientSide()
                 && horse.getControllingPassenger() instanceof EntityMaid && MaidMounts.isMaidMount(horse)) {
             horse.setStanding(false);
+            KnightlyMaidConfig.verbose(LOGGER, "Stopped {} of maid {} from rearing", horse, horse.getControllingPassenger().getUUID());
         }
     }
 
@@ -189,6 +213,8 @@ public class HorseEvents {
             return false;
         }
 
+        KnightlyMaidConfig.verbose(LOGGER, "{} put maid {} on {}", player.getScoreboardName(), maid.getUUID(), mount);
+
         // The tracker does not send a player's own passengers to that player (an empty dragon seat removes itself)
         if (wasCarriedByPlayer) {
             player.connection.send(new ClientboundSetPassengersPacket(player));
@@ -211,6 +237,8 @@ public class HorseEvents {
         }
 
         if (isSuccess) {
+            KnightlyMaidConfig.verbose(LOGGER, "{} took maid {} back", player.getScoreboardName(), maid.getUUID());
+
             // Like TLM's saddle: otherwise she could not attack targets outside her home area
             if (maid.isHomeModeEnable()) {
                 maid.setHomeModeEnable(false);
@@ -224,6 +252,6 @@ public class HorseEvents {
 
     private static void fail(final ServerPlayer player, final EntityMaid maid) {
         player.displayClientMessage(Component.translatable(TRANSFER_FAILED), true);
-        LOGGER.debug("Could not move maid {} (vehicle: {}) for player {}", maid, maid.getVehicle(), player.getScoreboardName());
+        KnightlyMaidConfig.verbose(LOGGER, "Could not move maid {} (vehicle: {}) for player {}", maid, maid.getVehicle(), player.getScoreboardName());
     }
 }

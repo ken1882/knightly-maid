@@ -2,6 +2,7 @@ package com.compeador.knightlymaid;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.google.common.collect.ImmutableMap;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,12 +15,14 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+import org.slf4j.Logger;
 
 /**
  * TLM's 'MaidFollowOwnerTask' for a maid driving her horse (TLM's version does not run while she rides). <br>
  * Her walk target moves the horse, since a mob steering a mount uses the mount's navigation ({@link Mob#getNavigation}).
  */
 public class DriveMountToOwnerTask extends Behavior<EntityMaid> {
+    private static final Logger LOGGER = LogUtils.getLogger();
     /** Wider than TLM's 2 blocks, for the horse's size */
     private static final int STOP_DISTANCE = 3;
 
@@ -53,6 +56,9 @@ public class DriveMountToOwnerTask extends Behavior<EntityMaid> {
             if (teleportNear(mount, owner.blockPosition())) {
                 mount.getNavigation().stop();
                 maid.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                KnightlyMaidConfig.verbose(LOGGER, "Teleported {} of maid {} to owner {}", mount, maid.getUUID(), owner.getScoreboardName());
+            } else {
+                KnightlyMaidConfig.verbose(LOGGER, "No spot to teleport {} of maid {} to owner {}", mount, maid.getUUID(), owner.getScoreboardName());
             }
         } else if (!isWalkTarget(maid, owner)) {
             BehaviorUtils.setWalkAndLookTargetMemories(maid, owner, MaidMounts.gallopSpeed(maid), STOP_DISTANCE);
@@ -66,7 +72,7 @@ public class DriveMountToOwnerTask extends Behavior<EntityMaid> {
     }
 
     /** Same as the (private) 'TamableAnimal#teleportToAroundBlockPos'. The rider moves along with the mount. */
-    private static boolean teleportNear(final Mob mount, final BlockPos target) {
+    static boolean teleportNear(final Mob mount, final BlockPos target) {
         for (int attempt = 0; attempt < 10; attempt++) {
             int x = mount.getRandom().nextIntBetweenInclusive(-3, 3);
             int z = mount.getRandom().nextIntBetweenInclusive(-3, 3);

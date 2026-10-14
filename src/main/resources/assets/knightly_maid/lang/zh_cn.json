@@ -1,4 +1,8 @@
 {
   "entity.knightly_maid.dragon_seat": "龙背座位",
-  "message.knightly_maid.transfer_failed": "现在无法把女仆移到那里"
+  "message.knightly_maid.transfer_failed": "现在无法把女仆移到那里",
+  "knightly_maid.configuration.followAcrossDimensions": "跨维度跟随",
+  "knightly_maid.configuration.followAcrossDimensions.tooltip": "切换维度时，带上正在跟随你的女仆（步行或骑马）。车万女仆本身只在同一维度内跟随。坐在龙背上的女仆总会一起过去。",
+  "knightly_maid.configuration.verboseLogging": "详细日志",
+  "knightly_maid.configuration.verboseLogging.tooltip": "在 latest.log 中记录模组对乘坐中女仆的处理（乘坐、传送、跨维度、被拦截的下车、鞍转移）。用于排查问题，日志可能较多。"
 }

@@ -38,3 +38,10 @@ type="required"
 versionRange="${touhou_little_maid_version_range}"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.knightly_maid]]
+modId="touhou_little_maid_spell"
+type="optional"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"

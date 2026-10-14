@@ -5,7 +5,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -29,7 +31,8 @@ public class KnightlyMaid {
     public static final Supplier<AttachmentType<Boolean>> FALL_PROTECTION = ATTACHMENT_TYPES.register("fall_protection",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
 
-    public KnightlyMaid(final IEventBus modBus) {
+    public KnightlyMaid(final IEventBus modBus, final ModContainer container) {
+        container.registerConfig(ModConfig.Type.COMMON, KnightlyMaidConfig.SPEC);
         ENTITY_TYPES.register(modBus);
         ATTACHMENT_TYPES.register(modBus);
         modBus.addListener((RegisterDataMapTypesEvent event) -> event.register(MountSettings.DATA_MAP));

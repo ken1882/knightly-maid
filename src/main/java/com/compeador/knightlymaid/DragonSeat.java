@@ -1,6 +1,7 @@
 package com.compeador.knightlymaid;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * Invisible seat between a carrier and a maid (carrier ← seat ← maid). The carrier is a dragon player, or any entity in the tag
@@ -27,6 +29,8 @@ import org.jetbrains.annotations.Nullable;
  * On other entities the seat keeps her from becoming their controlling passenger, and places her ({@link MountSettings#seatOffset}).
  */
 public class DragonSeat extends Entity {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     /** Dragon Survival is optional: without it {@link DragonCompat} is never loaded */
     static final boolean DRAGON_SURVIVAL = ModList.get().isLoaded("dragonsurvival");
 
@@ -63,13 +67,17 @@ public class DragonSeat extends Entity {
         seat.setPos(carrier.position());
 
         if (!carrier.level().addFreshEntity(seat)) {
+            KnightlyMaidConfig.verbose(LOGGER, "Could not seat maid {} on {}: seat not added to the level", maid.getUUID(), carrier);
             return false;
         }
 
         if (!seat.startRiding(carrier) || !maid.startRiding(seat)) {
+            KnightlyMaidConfig.verbose(LOGGER, "Could not seat maid {} on {}: riding refused (seat on carrier: {})", maid.getUUID(), carrier, seat.getVehicle() == carrier);
             seat.discard();
             return false;
         }
+
+        KnightlyMaidConfig.verbose(LOGGER, "Seated maid {} on {}", maid.getUUID(), carrier);
 
         if (carrier instanceof ServerPlayer player) {
             // The tracker does not send a player's own passengers to that player
@@ -90,6 +98,8 @@ public class DragonSeat extends Entity {
         }
 
         if (!level().isClientSide() && !(canCarry(getVehicle()) && getFirstPassenger() instanceof EntityMaid)) {
+            KnightlyMaidConfig.verbose(LOGGER, "Seat on {} is no longer used (carrier can carry: {}, passenger: {})", getVehicle(), canCarry(getVehicle()), getFirstPassenger());
+
             if (getVehicle() != null) {
                 stopRiding();
             } else {
@@ -135,6 +145,11 @@ public class DragonSeat extends Entity {
         }
 
         Entity vehicle = getVehicle();
+
+        if (vehicle != null) {
+            KnightlyMaidConfig.verbose(LOGGER, "Seat leaves {} (carrier removal: {}), putting down {}", vehicle, vehicle.getRemovalReason(), getPassengers());
+        }
+
         // While still riding, so the maid is placed next to the carrier instead of falling from its back
         releasing = true;
         ejectPassengers();

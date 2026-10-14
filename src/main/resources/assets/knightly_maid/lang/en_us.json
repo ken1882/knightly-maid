@@ -1,4 +1,8 @@
 {
   "entity.knightly_maid.dragon_seat": "Dragon Seat",
-  "message.knightly_maid.transfer_failed": "The maid cannot be moved there right now"
+  "message.knightly_maid.transfer_failed": "The maid cannot be moved there right now",
+  "knightly_maid.configuration.followAcrossDimensions": "Follow Across Dimensions",
+  "knightly_maid.configuration.followAcrossDimensions.tooltip": "Bring your following maids (on foot or on their horse) along when you change dimension. Touhou Little Maid only lets them follow within a dimension. Maids seated on your dragon back always come along.",
+  "knightly_maid.configuration.verboseLogging": "Verbose Logging",
+  "knightly_maid.configuration.verboseLogging.tooltip": "Log what the mod does with seated and riding maids (seating, teleports, dimension changes, blocked dismounts, saddle transfers) to latest.log. For troubleshooting; can be noisy."
 }

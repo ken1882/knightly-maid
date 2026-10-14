@@ -59,10 +59,13 @@ public class SeatedMaids extends SavedData {
         return seatedMaids;
     }
 
-    /** Puts down the maid that was seated on this dragon when the game last saved */
+    /**
+     * Puts down the maid that was seated on this dragon when the game last saved. The record is kept (and saved again) until she is put
+     * down, so a failed attempt is retried on the next login.
+     */
     static void restore(final ServerPlayer dragon) {
         SeatedMaids seatedMaids = get(dragon.server);
-        CompoundTag tag = seatedMaids != null ? seatedMaids.unrestored.remove(dragon.getUUID()) : null;
+        CompoundTag tag = seatedMaids != null ? seatedMaids.unrestored.get(dragon.getUUID()) : null;
 
         if (tag == null) {
             return;
@@ -71,19 +74,30 @@ public class SeatedMaids extends SavedData {
         ServerLevel level = dragon.serverLevel();
 
         if (!(EntityType.create(tag, level).orElse(null) instanceof EntityMaid maid)) {
-            LOGGER.error("Could not load the maid seated on {} when the game stopped", dragon.getScoreboardName());
+            LOGGER.error("Could not load the maid seated on {} when the game stopped, kept for the next login: {}", dragon.getScoreboardName(), tag);
             return;
+        }
+
+        // Already loaded somewhere (only visible ones are found): putting her down again would duplicate her
+        for (ServerLevel anyLevel : dragon.server.getAllLevels()) {
+            if (anyLevel.getEntity(maid.getUUID()) != null) {
+                seatedMaids.unrestored.remove(dragon.getUUID());
+                LOGGER.warn("Maid {} seated on {} when the game stopped is already in {}, not put down again", maid.getUUID(), dragon.getScoreboardName(),
+                        anyLevel.dimension().location());
+                return;
+            }
         }
 
         // Same place as when the seat drops her on logout
         maid.moveTo(dragon.getDismountLocationForPassenger(maid), dragon.getYRot(), 0);
         maid.setData(KnightlyMaid.FALL_PROTECTION, true);
 
-        // Fails if an entity with her UUID is already loaded
+        // Fails if an entity with her UUID is already known in this level, or a mod refuses her
         if (level.addFreshEntity(maid)) {
+            seatedMaids.unrestored.remove(dragon.getUUID());
             LOGGER.info("Put down maid {} that was seated on {} when the game stopped", maid.getUUID(), dragon.getScoreboardName());
         } else {
-            LOGGER.warn("Could not put down maid {} that was seated on {} when the game stopped", maid.getUUID(), dragon.getScoreboardName());
+            LOGGER.warn("Could not put down maid {} that was seated on {} when the game stopped, retried on the next login", maid.getUUID(), dragon.getScoreboardName());
         }
     }
 
@@ -99,6 +113,7 @@ public class SeatedMaids extends SavedData {
             }
         }
 
+        KnightlyMaidConfig.verbose(LOGGER, "Saved maids seated on players: {} (from before the last stop, not restored yet: {})", tag.size() - unrestored.size(), unrestored.size());
         return tag;
     }
 
